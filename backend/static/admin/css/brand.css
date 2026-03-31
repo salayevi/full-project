@@ -1,0 +1,81 @@
+:root {
+  --primary: #0f172a;
+  --secondary: #111827;
+  --accent: #c89b3c;
+  --header-color: #f8fafc;
+  --breadcrumbs-bg: #101828;
+  --link-fg: #9a6c13;
+  --link-selected-fg: #7c5a11;
+  --button-bg: #111827;
+  --button-hover-bg: #0b1220;
+  --default-button-bg: #c89b3c;
+  --default-button-hover-bg: #b3892f;
+}
+
+#header {
+  background:
+    radial-gradient(circle at top left, rgba(200, 155, 60, 0.28), transparent 35%),
+    linear-gradient(135deg, #0f172a, #111827 50%, #1f2937);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
+}
+
+#site-name a,
+#site-name a:visited {
+  color: var(--header-color);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brand-shell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-subtitle {
+  margin: 4px 0 0;
+  color: rgba(248, 250, 252, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+div.breadcrumbs {
+  background: var(--breadcrumbs-bg);
+}
+
+.module,
+.inline-group,
+#content-related .module {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: linear-gradient(135deg, #0f172a, #1f2937);
+}
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  border-radius: 999px;
+}
+
+input,
+select,
+textarea {
+  border-radius: 12px;
+}
+
+.login #container {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+

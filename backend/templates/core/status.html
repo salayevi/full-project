@@ -1,0 +1,58 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="{% static 'core/css/status.css' %}">
+  </head>
+  <body>
+    <main class="status-shell">
+      <section class="status-card">
+        <p class="eyebrow">Backend Foundation</p>
+        <h1>{{ app_name }} is running</h1>
+        <p class="lead">
+          Sprint 1 is active and the Django backend foundation is available.
+          Django Admin remains the internal administration layer. The real operator dashboard now lives as a separate Next.js application that consumes these backend APIs.
+        </p>
+
+        <div class="meta-row">
+          <span class="pill">Environment: {{ environment|upper }}</span>
+          <span class="pill">Status: Operational</span>
+        </div>
+
+        <div class="links-grid">
+          <a class="link-card" href="{{ dashboard_url }}">
+            <strong>/dashboard/</strong>
+            <span>Redirect bridge to the real Next.js operator dashboard</span>
+          </a>
+          <a class="link-card" href="{{ operator_dashboard_url }}">
+            <strong>Next Dashboard</strong>
+            <span>Primary operator interface at {{ operator_dashboard_url }}</span>
+          </a>
+          <a class="link-card" href="{{ admin_url }}">
+            <strong>/admin/</strong>
+            <span>Fallback technical Django administration</span>
+          </a>
+          <a class="link-card" href="{{ api_url }}">
+            <strong>/api/v1/</strong>
+            <span>Version 1 root with admin/public API discovery</span>
+          </a>
+          <a class="link-card" href="{{ admin_api_url }}">
+            <strong>/api/v1/admin/</strong>
+            <span>Operator-facing admin API namespace</span>
+          </a>
+          <a class="link-card" href="{{ public_api_url }}">
+            <strong>/api/v1/public/</strong>
+            <span>Public-facing published content API namespace</span>
+          </a>
+          <a class="link-card" href="{{ health_url }}">
+            <strong>/api/v1/health/</strong>
+            <span>Health check endpoint</span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

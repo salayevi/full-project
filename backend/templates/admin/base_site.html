@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/brand.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <div class="brand-shell">
+    <div>
+      <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">Azizam Market Django Admin</a>
+      </h1>
+      <p class="brand-subtitle">Internal administration and fallback operations</p>
+    </div>
+  </div>
+{% endblock %}
