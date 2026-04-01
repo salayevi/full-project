@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 
 from apps.audit.models import AuditAction
 from apps.audit.services import record_audit_event
@@ -10,7 +10,7 @@ from ..services import get_current_about
 from .serializers import AboutSectionAdminSerializer
 
 
-@api_view(["GET", "PUT", "PATCH", "DELETE"])
+@api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsStaffOperator])
 def current_about(request):
     section = get_current_about()
@@ -19,20 +19,6 @@ def current_about(request):
         if section is None:
             return Response({"detail": "About section is not configured yet."}, status=HTTP_404_NOT_FOUND)
         return Response(AboutSectionAdminSerializer(section, context={"request": request}).data)
-
-    if request.method == "DELETE":
-        if section is None:
-            return Response({"detail": "About section is not configured yet."}, status=HTTP_404_NOT_FOUND)
-
-        record_audit_event(
-            action=AuditAction.DELETED,
-            actor=request.user,
-            request=request,
-            target=section,
-            message="Deleted the primary about section.",
-        )
-        section.delete()
-        return Response(status=HTTP_204_NO_CONTENT)
 
     partial = request.method == "PATCH"
     serializer = AboutSectionAdminSerializer(section, data=request.data, partial=partial, context={"request": request})

@@ -75,21 +75,6 @@ def serialize_media_asset(request, asset: MediaAsset) -> dict[str, Any]:
     }
 
 
-def _append_media_assets(snapshot: dict[str, Any], request, asset_ids: list[str | None]):
-    normalized_ids = {str(asset_id) for asset_id in asset_ids if asset_id}
-    if not normalized_ids:
-        return
-
-    existing_ids = {asset["id"] for asset in snapshot["mediaAssets"]}
-    missing_ids = normalized_ids - existing_ids
-    if not missing_ids:
-        return
-
-    assets = MediaAsset.objects.filter(id__in=missing_ids).order_by("sort_order", "title")
-    snapshot["mediaAssets"].extend(serialize_media_asset(request, asset) for asset in assets)
-    snapshot["mediaAssets"].sort(key=lambda asset: (asset.get("sortOrder", 0), asset.get("label", "")))
-
-
 def _theme_settings_payload(site: SiteSettings) -> dict[str, Any]:
     theme = getattr(site, "theme", None)
     if theme is None:
@@ -210,26 +195,6 @@ def _product_media_asset_id(product) -> str | None:
     return str(first_item.asset_id) if first_item else None
 
 
-def _format_public_price(value: Decimal | str | None, currency: str | None) -> str:
-    if value is None:
-        return ""
-
-    amount = value if isinstance(value, Decimal) else Decimal(str(value))
-    normalized = amount.quantize(Decimal("0.01"))
-
-    if currency == "USD":
-        if normalized == normalized.quantize(Decimal("1")):
-            return f"${int(normalized)}"
-        return f"${normalized.normalize()}"
-
-    if currency:
-        if normalized == normalized.quantize(Decimal("1")):
-            return f"{int(normalized)} {currency}"
-        return f"{normalized.normalize()} {currency}"
-
-    return str(normalized.normalize())
-
-
 def serialize_product(product) -> dict[str, Any]:
     theme = getattr(product, "theme", None)
     if theme is None:
@@ -247,7 +212,7 @@ def serialize_product(product) -> dict[str, Any]:
         "title": product.title,
         "subtitle": product.subtitle or None,
         "description": product.description or product.short_description,
-        "price": _format_public_price(product.price, product.currency),
+        "price": str(product.price.quantize(Decimal("0.01"))),
         "badge": product.badge or theme.badge_label or None,
         "mediaAssetId": _product_media_asset_id(product),
         "displayTheme": {
@@ -467,7 +432,7 @@ def _merge_site_identity(snapshot: dict[str, Any], payload: dict[str, Any]):
                 theme_settings[group][camel] = theme[key]
 
 
-def _merge_hero(snapshot: dict[str, Any], payload: dict[str, Any], request=None):
+def _merge_hero(snapshot: dict[str, Any], payload: dict[str, Any]):
     snapshot["hero"].update(
         {
             "status": _normalize_publish_state(payload.get("publish_state")),
@@ -479,18 +444,9 @@ def _merge_hero(snapshot: dict[str, Any], payload: dict[str, Any], request=None)
             "overlay": {"color": payload.get("overlay_color", snapshot["hero"]["overlay"]["color"])},
         }
     )
-    _append_media_assets(
-        snapshot,
-        request,
-        [
-            payload.get("background_asset_id"),
-            payload.get("mobile_background_asset_id"),
-            payload.get("logo_asset_id"),
-        ],
-    )
 
 
-def _merge_about(snapshot: dict[str, Any], payload: dict[str, Any], request=None):
+def _merge_about(snapshot: dict[str, Any], payload: dict[str, Any]):
     snapshot["about"].update(
         {
             "status": _normalize_publish_state(payload.get("publish_state")),
@@ -515,7 +471,6 @@ def _merge_about(snapshot: dict[str, Any], payload: dict[str, Any], request=None
         }
         for index, item in enumerate(text_items)
     ]
-    _append_media_assets(snapshot, request, [payload.get("image_asset_id")])
 
 
 def _merge_footer(snapshot: dict[str, Any], payload: dict[str, Any]):
@@ -541,26 +496,9 @@ def _merge_footer(snapshot: dict[str, Any], payload: dict[str, Any]):
     )
 
 
-def _preview_product_media_asset_id(payload: dict[str, Any]) -> str | None:
-    if payload.get("cover_asset_id"):
-        return payload["cover_asset_id"]
-
-    media_items = payload.get("media_items") or []
-    primary_item = next(
-        (item for item in media_items if item.get("role") == "primary" and item.get("asset_id")),
-        None,
-    )
-    if primary_item:
-        return primary_item["asset_id"]
-
-    first_item = next((item for item in media_items if item.get("asset_id")), None)
-    return first_item.get("asset_id") if first_item else None
-
-
-def _merge_products(snapshot: dict[str, Any], payload: dict[str, Any], request=None):
+def _merge_products(snapshot: dict[str, Any], payload: dict[str, Any]):
     product_id = str(payload.get("id") or "preview-product")
     color_variants = payload.get("color_variants", [])
-    media_asset_id = _preview_product_media_asset_id(payload)
     snapshot["products"] = [
         item for item in snapshot["products"] if item["id"] != product_id
     ] + [
@@ -576,9 +514,9 @@ def _merge_products(snapshot: dict[str, Any], payload: dict[str, Any], request=N
             "title": payload.get("title") or "",
             "subtitle": payload.get("subtitle") or None,
             "description": payload.get("description") or payload.get("short_description") or "",
-            "price": _format_public_price(payload.get("price") or "0.00", payload.get("currency")),
+            "price": str(payload.get("price") or "0.00"),
             "badge": payload.get("badge") or None,
-            "mediaAssetId": media_asset_id,
+            "mediaAssetId": payload.get("cover_asset_id"),
             "displayTheme": {
                 "bg": payload.get("theme", {}).get("surface_color"),
                 "text": payload.get("theme", {}).get("text_color"),
@@ -615,14 +553,9 @@ def _merge_products(snapshot: dict[str, Any], payload: dict[str, Any], request=N
         }
         for index, item in enumerate(color_variants)
     ]
-    _append_media_assets(
-        snapshot,
-        request,
-        [media_asset_id, *[item.get("asset_id") for item in payload.get("media_items") or []], *[item.get("preview_asset_id") for item in color_variants]],
-    )
 
 
-def _merge_achievements(snapshot: dict[str, Any], payload: dict[str, Any], request=None):
+def _merge_achievements(snapshot: dict[str, Any], payload: dict[str, Any]):
     item_id = str(payload.get("id") or "preview-achievement")
     snapshot["achievements"] = [
         item for item in snapshot["achievements"] if item["id"] != item_id
@@ -647,7 +580,6 @@ def _merge_achievements(snapshot: dict[str, Any], payload: dict[str, Any], reque
             },
         }
     ]
-    _append_media_assets(snapshot, request, [payload.get("media_asset_id")])
 
 
 def build_preview_site_snapshot(module: str, payload: dict[str, Any], request=None) -> dict[str, Any]:
@@ -655,17 +587,16 @@ def build_preview_site_snapshot(module: str, payload: dict[str, Any], request=No
 
     if module == "site_settings":
         _merge_site_identity(snapshot, payload)
-        _append_media_assets(snapshot, request, [payload.get("logo_asset_id"), payload.get("favicon_asset_id")])
     elif module == "hero":
-        _merge_hero(snapshot, payload, request=request)
+        _merge_hero(snapshot, payload)
     elif module == "about":
-        _merge_about(snapshot, payload, request=request)
+        _merge_about(snapshot, payload)
     elif module == "footer":
         _merge_footer(snapshot, payload)
     elif module == "products":
-        _merge_products(snapshot, payload, request=request)
+        _merge_products(snapshot, payload)
     elif module == "achievements":
-        _merge_achievements(snapshot, payload, request=request)
+        _merge_achievements(snapshot, payload)
     else:
         raise ValueError(f"Unsupported preview module '{module}'.")
 

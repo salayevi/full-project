@@ -139,7 +139,10 @@ def create_site_preview_session(request):
             "token": str(preview.token),
             "expires_at": preview.expires_at.isoformat(),
             "snapshot_url": request.build_absolute_uri(f"/api/v1/public/preview/{preview.token}/snapshot/"),
-            "preview_url": f"{settings.PUBLIC_SITE_PREVIEW_URL.rstrip('/')}/?preview_token={preview.token}",
+            "preview_url": (
+                f"{settings.PUBLIC_SITE_PREVIEW_URL.rstrip('/')}/"
+                f"?{settings.PUBLIC_SITE_PREVIEW_QUERY_KEY}={preview.token}"
+            ),
         },
         status=HTTP_201_CREATED,
     )
