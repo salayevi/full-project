@@ -1,8 +1,9 @@
 # Python
 backend/.venv/
-backend/__pycache__/
-backend/*.pyc
+__pycache__/
+*.pyc
 backend/db.sqlite3
+backend/media/
 
 # Env files
 .env
@@ -10,16 +11,19 @@ backend/db.sqlite3
 .env.production
 backend/.env
 backend/.env.*
-dashboard-app/.env
-dashboard-app/.env.*
-public/.env
-public/.env.*
+!backend/.env.example
+Dashboard/.env
+Dashboard/.env.*
+!Dashboard/.env.example
+Website/.env
+Website/.env.*
+!Website/.env.example
 
 # Node
-dashboard-app/node_modules/
-dashboard-app/.next/
-public/node_modules/
-public/.next/
+Dashboard/node_modules/
+Dashboard/.next/
+Website/node_modules/
+Website/.next/
 
 # OS / archive junk
 .DS_Store
